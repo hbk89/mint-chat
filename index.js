@@ -19,24 +19,27 @@ app.get(`/:id`, (req, res) => {
 
 // 소켓(유저) 서버에 들어옴
 io.on('connection', (socket) => {
-    console.log(`${socket.id}이 들어왔다.`);
-
     // 서버에 접속한 모두에게 보냄(ex.공지)
     io.emit('민트 공지: 화이팅');
 
     // 룸 접속
-    socket.on('joinRoom', (roomId) => {
+    socket.on('joinRoom', (roomId, userId) => {
         socket.join(roomId);
+
+        // 클라이언트단 유저 Id 넣어주기
+        socket.userId = userId;
+        console.log(`프론트앤드 ID : ${socket.userId}`);
+
         // 소켓 포함 모두에게
         //io.to(roomId).emit('message', `${socket.id}님이 접속하셨습니다.`);
-        // 소켓 제외
-        socket.broadcast.to(roomId).emit('message', `${socket.id}님이 접속하셨습니다.`);
+        //소켓 제외
+        socket.broadcast.to(roomId).emit('message', `${socket.userId}님이 접속하셨습니다.`);
     });
 
     // !!! 메시지
-    socket.on('message', (roomId, msg) => {
+    socket.on('message', (msg, roomId, userId) => {
         console.log(msg);
-        io.to(roomId).emit('message', msg);
+        io.to(roomId).emit('message', msg, userId);
     });
 
     // 룸에서 나갈때
@@ -44,7 +47,7 @@ io.on('connection', (socket) => {
         console.log(socket.rooms);
         //if(socket.rooms)
         console.log(socket.rooms);
-        socket.broadcast.to(socket.roomId).emit('message', `${socket.id}님이 나갔습니다.`);
+        socket.broadcast.to(socket.roomId).emit('message', `${socket.userId}님이 나갔습니다.`);
     })
 
     // 서버에서 나갈때
