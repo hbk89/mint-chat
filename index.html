@@ -69,36 +69,57 @@
 </body>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+
+    // 같은 도메인일때,
+    // 테스트 클라이언트 코드에서만 사용
     const socket = io();
+
+    // 다른 도메인
+    // the following forms are similar
+    //const socket = io("https://server-domain.com");
+    //const socket = io("wss://server-domain.com");
+    //const socket = io("server-domain.com"); // only in the browser when the page is served over https (will not work in Node.js)
 
     const messages = document.getElementById('messages');
     const form = document.getElementById('form');
     const input = document.getElementById('input');
 
+    // 룸(민트 space ID) 임시
+    const roomId = window.location.pathname;
+
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
         if(input.value){
-            socket.emit('chat message', input.value);
+            // 메시지 보내기 (룸에)
+            socket.emit('message', roomId, input.value);
             input.value = '';
         }
     });
 
+    // 연결
     socket.on('connect', () => {
-        console.log("채팅방에 어서오세요");
+        console.log(`${socket.id}님, 민트챗에 오신걸 환영합니다`);
+        console.log(socket.connected); // true
+
+        // 룸까지 연결 : roomid는 클라이언트에서 알고 있음
+        socket.emit('joinRoom', roomId);
     })
 
-    socket.on('room1' , (msg) => {
-        console.log(msg);
-    })
-    
-    socket.on('chat all', (msg) => {
+    socket.on('message', (msg) => {
         console.log(msg);
         const item = document.createElement('li');
         item.textContent = msg;
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
     });
+
+    // 서버 연결 끊김
+    socket.on('disconnect', (msg) => {
+        // msg: disconnect reason
+        console.log("서버와의 연결이 끊겼습니다.");
+        console.log(socket.connected); // false
+    })
 </script>
 
 </html>
